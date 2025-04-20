@@ -1,3 +1,5 @@
+[![Run Kotlin Spring Boot Tests](https://github.com/sky4git/interview-task/actions/workflows/test.yml/badge.svg)](https://github.com/sky4git/interview-task/actions/workflows/test.yml)
+
 ## Challenge
 
 URL Shortener API – Code Test
