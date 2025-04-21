@@ -12,6 +12,7 @@ import org.junit.jupiter.api.assertThrows
 import origin.interview.configuration.ApplicationProperties
 import origin.interview.repositories.database.InMemoryRepository
 import origin.interview.repositories.database.ShortUrlEntity
+import origin.interview.service.model.ShortUrlMetadata
 import origin.interview.util.CommonHelper
 import origin.interview.util.Exceptions.FailedToCreateShortURLException
 import origin.interview.util.Exceptions.FullURLNotFoundException
@@ -28,7 +29,7 @@ class UrlShortenerServiceTests {
 
     @BeforeEach
     fun beforeAll() {
-        every { appProperties.baseUrl } returns "https://short.ly/"
+        every { appProperties.baseUrl } returns "http://short.ly/"
     }
 
     @Nested
@@ -44,7 +45,8 @@ class UrlShortenerServiceTests {
                     ShortUrlEntity(
                         id = 12345,
                         code = shortCode,
-                        url = url
+                        url = url,
+                        clicks = 1,
                     )
 
             // mock the CommonHelper object
@@ -53,7 +55,7 @@ class UrlShortenerServiceTests {
 
             val service = UrlShortenerService(inMemoryRepository, appProperties)
             val response = service.shortenURL(url)
-            val expected = URI("https://short.ly/pxY123").toURL()
+            val expected = URI("http://short.ly/pxY123").toURL()
             Assertions.assertEquals(expected, response)
 
             unmockkObject(CommonHelper)
@@ -69,7 +71,8 @@ class UrlShortenerServiceTests {
                     ShortUrlEntity(
                         id = 12345,
                         code = shortCode,
-                        url = url
+                        url = url,
+                        clicks = 1,
                     )
 
             // Mock the CommonHelper object
@@ -78,7 +81,7 @@ class UrlShortenerServiceTests {
 
             val service = UrlShortenerService(inMemoryRepository, appProperties)
             val response = service.shortenURL(url)
-            val expected = URI("https://short.ly/pxY123").toURL()
+            val expected = URI("http://short.ly/pxY123").toURL()
             Assertions.assertEquals(expected, response)
 
             unmockkObject(CommonHelper)
@@ -113,13 +116,21 @@ class UrlShortenerServiceTests {
         @Test
         fun `getFullUrlFromShortcode - redirect to full url successful`() {
             val url = "https://test.com"
-            val shortCode = "aBc1X3"
+            val shortCode = "cBc1X3"
             val inMemoryRepository = mockk<InMemoryRepository>()
             every { inMemoryRepository.findByCode(shortCode) } returns
                     ShortUrlEntity(
                         id = 12345,
                         code = shortCode,
-                        url = url
+                        url = url,
+                        clicks = 0,
+                    )
+            every { inMemoryRepository.save<ShortUrlEntity>(any()) } returns
+                    ShortUrlEntity(
+                        id = 12345,
+                        code = shortCode,
+                        url = url,
+                        clicks = 1,
                     )
             val service = UrlShortenerService(inMemoryRepository, appProperties)
             val response = service.getFullUrlFromShortcode(shortCode)
@@ -128,7 +139,7 @@ class UrlShortenerServiceTests {
 
         @Test
         fun `getFullUrlFromShortcode throws FullURLNotFoundException`() {
-            val shortCode = "aBc1X3"
+            val shortCode = "cBc1X3"
             val inMemoryRepository = mockk<InMemoryRepository>()
             every { inMemoryRepository.findByCode(shortCode) } returns null
             val service = UrlShortenerService(inMemoryRepository, appProperties)
@@ -139,7 +150,7 @@ class UrlShortenerServiceTests {
 
         @Test
         fun `getFullUrlFromShortcode throws FullURLNotFoundException on database error`() {
-            val shortCode = "aBc1X3"
+            val shortCode = "cBc1X3"
             val inMemoryRepository = mockk<InMemoryRepository>()
             every { inMemoryRepository.findByCode(shortCode) } throws EntityNotFoundException("Not found")
             val service = UrlShortenerService(inMemoryRepository, appProperties)
@@ -147,5 +158,54 @@ class UrlShortenerServiceTests {
                 service.getFullUrlFromShortcode(shortCode)
             }
         }
+    }
+
+    @Nested
+    inner class GetInfoByShortcodeTests {
+        @Test
+        fun `fetched the short url metadata successfully`() {
+            val url = "https://test.com"
+            val shortCode = "aBc1X3"
+            val inMemoryRepository = mockk<InMemoryRepository>()
+            every { inMemoryRepository.findByCode(shortCode) } returns
+                    ShortUrlEntity(
+                        id = 12345,
+                        code = shortCode,
+                        url = url,
+                        clicks = 10,
+                    )
+            val service = UrlShortenerService(inMemoryRepository, appProperties)
+            val response = service.getInfoByShortcode(shortCode)
+            assertEquals(
+                ShortUrlMetadata(
+                    shortUrl = "http://short.ly/${shortCode}",
+                    originalUrl = url,
+                    clicks = 10
+                ), response
+            )
+        }
+
+        @Test
+        fun `throws FullURLNotFoundException when no record found`() {
+            val shortCode = "aBc1X3"
+            val inMemoryRepository = mockk<InMemoryRepository>()
+            every { inMemoryRepository.findByCode(shortCode) } returns null
+            val service = UrlShortenerService(inMemoryRepository, appProperties)
+            assertThrows<FullURLNotFoundException> {
+                service.getInfoByShortcode(shortCode)
+            }
+        }
+
+        @Test
+        fun `throws FullURLNotFoundException on database error`() {
+            val shortCode = "aBc1X3"
+            val inMemoryRepository = mockk<InMemoryRepository>()
+            every { inMemoryRepository.findByCode(shortCode) } throws EntityNotFoundException()
+            val service = UrlShortenerService(inMemoryRepository, appProperties)
+            assertThrows<FullURLNotFoundException> {
+                service.getInfoByShortcode(shortCode)
+            }
+        }
+
     }
 }

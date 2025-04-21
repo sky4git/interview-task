@@ -4,6 +4,7 @@ import org.springframework.stereotype.Service
 import origin.interview.configuration.ApplicationProperties
 import origin.interview.repositories.database.InMemoryRepository
 import origin.interview.repositories.database.ShortUrlEntity
+import origin.interview.service.model.ShortUrlMetadata
 import origin.interview.util.CommonHelper
 import origin.interview.util.Exceptions.FailedToCreateShortURLException
 import origin.interview.util.Exceptions.FullURLNotFoundException
@@ -27,7 +28,7 @@ class UrlShortenerService(
         if (!CommonHelper.isValidURL(url)) {
             throw MalformedURLSuppliedException("Invalid URL supplied")
         }
-        
+
         try {
             // check if url already exists
             inMemoryRepository.findByUrl(url)
@@ -56,9 +57,33 @@ class UrlShortenerService(
         }
 
         return if (shortUrlEntity != null) {
+            // update the clicks value
+            shortUrlEntity.clicks += 1
+            inMemoryRepository.save<ShortUrlEntity>(shortUrlEntity)
+            // return the uri only
             URI(shortUrlEntity.url)
         } else {
             log.warning("Full url cannot be found for the shortCode: $shortCode")
+            throw FullURLNotFoundException("Original url not found")
+        }
+    }
+
+    fun getInfoByShortcode(shortCode: String): ShortUrlMetadata {
+        val shortUrlEntity = try {
+            inMemoryRepository.findByCode(shortCode)
+        } catch (exception: Exception) {
+            log.warning("Database error when trying to find full url by shortCode: $shortCode :: ${exception.message}")
+            throw FullURLNotFoundException("Original url not found")
+        }
+
+        return if (shortUrlEntity != null) {
+            ShortUrlMetadata(
+                shortUrl = "${appProperties.baseUrl}$shortCode",
+                originalUrl = shortUrlEntity.url,
+                clicks = shortUrlEntity.clicks
+            )
+        } else {
+            log.warning("Full url cannot be found for the shortCode to get the info: $shortCode")
             throw FullURLNotFoundException("Original url not found")
         }
     }

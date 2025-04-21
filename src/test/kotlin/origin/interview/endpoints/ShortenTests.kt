@@ -21,7 +21,7 @@ class ShortenTests {
         val applicationController = ApplicationController(urlShortenerService)
         val response = applicationController.shortenURL("https://test.com")
         assertEquals(
-            ShortenResponse(shortenUrl = "https://short.ly/aBc12e"),
+            ShortenResponse(shortUrl = "https://short.ly/aBc12e"),
             response
         )
     }

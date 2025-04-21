@@ -12,4 +12,7 @@ data class ShortUrlEntity(
 
     @Column(unique = true, nullable = false)
     val code: String,
+
+    @Column(nullable = false)
+    var clicks: Int = 0,
 )

@@ -51,3 +51,42 @@ Requirements (Mandatory)
 ```shell
 ./gradlew bootRun
 ```
+
+## Endpoints
+
+### 1. Shorten the URL
+
+Endpoint: `/api/shorten`
+
+Curl: ```curl --location 'http://localhost:8080/api/shorten?url=https%3A%2F%2Fbing.com'```
+Expected Response:
+
+```json
+{
+  "shortUrl": "http://short.ly/eN5UlY"
+}
+```
+
+### 2. Redirect to original url
+
+Endpoint: `/api/redirect/{shortCode}`
+
+Curl: ```curl --location 'http://localhost:8080/api/redirect/eN5UlY'```
+
+Expected Response is HTTPS status code 302 redirect to the original URL.
+
+### 3. Get info about the original URL
+
+Endpoint: `/api/info/{shortCode}`
+
+Curl: ```curl --location --request POST 'http://localhost:8080/api/info/eN5UlY'```
+
+Expected Response:
+
+```json
+{
+  "shortUrl": "http://short.ly/eN5UlY",
+  "fullUrl": "https://bing.com",
+  "clicks": 2
+}
+```

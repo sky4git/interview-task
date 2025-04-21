@@ -4,5 +4,5 @@ import kotlinx.serialization.Serializable
 
 @Serializable
 data class ShortenResponse(
-    val shortenUrl: String,
+    val shortUrl: String,
 )
