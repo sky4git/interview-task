@@ -73,7 +73,7 @@ Endpoint: `/api/redirect/{shortCode}`
 
 Curl: ```curl --location 'http://localhost:8080/api/redirect/eN5UlY'```
 
-Expected Response is HTTPS status code 302 redirect to the original URL.
+Expected Response is HTTP status code 302 redirect to the original URL.
 
 ### 3. Get info about the original URL
 
